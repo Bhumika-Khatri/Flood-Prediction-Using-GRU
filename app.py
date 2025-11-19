@@ -15,8 +15,8 @@ if not os.path.exists("scaler.pkl"):
     st.error("❌ Scaler file 'scaler.pkl' not found!")
     st.stop()
 
+# Load model and scaler
 model = load_model("model.h5", compile=False)
-
 with open("scaler.pkl", "rb") as f:
     scaler = pickle.load(f)
 
@@ -25,27 +25,30 @@ with open("scaler.pkl", "rb") as f:
 # -------------------------
 st.title("🌧️ Flood Prediction Using GRU")
 
+st.markdown("Enter the values for the following parameters to predict the flood percentage:")
+
 # -------------------------
 # 3) USER INPUTS
 # -------------------------
-Rainfall = st.number_input("Rainfall")
-Relative_Humidity = st.number_input("Relative Humidity")
-Pressure = st.number_input("Pressure")
-Wind_speed = st.number_input("Wind speed")
-Wind_direction = st.number_input("Wind direction")
-Temperature = st.number_input("Temperature")
-Snowfall = st.number_input("Snowfall")
-Snow_depth = st.number_input("Snow depth")
-Shortwave = st.number_input("Short-wave irradiation")
-POONDI = st.number_input("POONDI")
-CHOLAVARAM = st.number_input("CHOLAVARAM")
-REDHILLS = st.number_input("REDHILLS")
-CHEM = st.number_input("CHEMBARAMBAKKAM")
+Rainfall = st.number_input("Rainfall (mm)", min_value=0.0, value=50.0)
+Relative_Humidity = st.number_input("Relative Humidity (%)", min_value=0.0, value=80.0)
+Pressure = st.number_input("Pressure (hPa)", min_value=900.0, value=1010.0)
+Wind_speed = st.number_input("Wind speed (m/s)", min_value=0.0, value=5.0)
+Wind_direction = st.number_input("Wind direction (degrees)", min_value=0.0, value=90.0)
+Temperature = st.number_input("Temperature (°C)", min_value=-10.0, value=28.0)
+Snowfall = st.number_input("Snowfall (mm)", min_value=0.0, value=0.0)
+Snow_depth = st.number_input("Snow depth (cm)", min_value=0.0, value=0.0)
+Shortwave = st.number_input("Short-wave irradiation", min_value=0.0, value=200.0)
+POONDI = st.number_input("POONDI Reservoir level", min_value=0.0, value=50.0)
+CHOLAVARAM = st.number_input("CHOLAVARAM Reservoir level", min_value=0.0, value=40.0)
+REDHILLS = st.number_input("REDHILLS Reservoir level", min_value=0.0, value=30.0)
+CHEM = st.number_input("CHEMBARAMBAKKAM Reservoir level", min_value=0.0, value=35.0)
 
 # -------------------------
 # 4) PREDICTION
 # -------------------------
 if st.button("Predict Flood %"):
+    # Prepare input
     x = np.array([[Rainfall, Relative_Humidity, Pressure, Wind_speed,
                    Wind_direction, Temperature, Snowfall, Snow_depth,
                    Shortwave, POONDI, CHOLAVARAM, REDHILLS, CHEM]])
@@ -61,5 +64,3 @@ if st.button("Predict Flood %"):
     pred = max(0, pred)
     
     st.success(f"🌊 Predicted Flood Percent: {pred:.2f}%")
-
-    st.success(f"🌊 Predicted Flood Percent: {pred_real:.2f}%")
