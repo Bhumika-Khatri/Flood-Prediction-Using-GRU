@@ -1,74 +1,44 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
 from tensorflow.keras.models import load_model
-import joblib
+import pickle
+import numpy as np
+import streamlit as st
 
-st.title("🌧️ Flood Percentage Prediction App")
-st.write("Enter weather & reservoir parameters to predict flood percentage.")
+# -------------------------
+# Load model safely
+# -------------------------
+model = load_model("model.h5", compile=False)
 
-# ------------------- LOAD MODEL -----------------------
-model = load_model("model.h5")  # <-- change name if needed
+# Load scaler
+with open("scaler.pkl", "rb") as f:
+    scaler = pickle.load(f)
 
-# Load scaler if your training used MinMaxScaler
-try:
-    scaler = joblib.load("scaler.pkl")
-except:
-    scaler = None
+# Title
+st.title("🌧️ Flood Prediction Using GRU")
 
-# ------------------- USER INPUT SECTION -------------------
+# User Inputs
+Rainfall = st.number_input("Rainfall")
+Relative_Humidity = st.number_input("Relative Humidity")
+Pressure = st.number_input("Pressure")
+Wind_speed = st.number_input("Wind speed")
+Wind_direction = st.number_input("Wind direction")
+Temperature = st.number_input("Temperature")
+Snowfall = st.number_input("Snowfall")
+Snow_depth = st.number_input("Snow depth")
+Shortwave = st.number_input("Short-wave irradiation")
+POONDI = st.number_input("POONDI")
+CHOLAVARAM = st.number_input("CHOLAVARAM")
+REDHILLS = st.number_input("REDHILLS")
+CHEM = st.number_input("CHEMBARAMBAKKAM")
 
-st.subheader("Enter Input Values")
-
-col1, col2 = st.columns(2)
-
-with col1:
-    Rainfall = st.number_input("Rainfall (mm)", min_value=0.0)
-    Relative_Humidity = st.number_input("Relative Humidity (%)", min_value=0.0)
-    Pressure = st.number_input("Pressure (hPa)", min_value=0.0)
-    Wind_speed = st.number_input("Wind speed (m/s)", min_value=0.0)
-    Wind_direction = st.number_input("Wind direction (degrees)", min_value=0.0)
-
-with col2:
-    Temperature = st.number_input("Temperature (°C)", min_value=-50.0)
-    Snowfall = st.number_input("Snowfall (mm)", min_value=0.0)
-    Snow_depth = st.number_input("Snow depth (cm)", min_value=0.0)
-    Short_wave = st.number_input("Short-wave irradiation", min_value=0.0)
-
-# Reservoir levels (numeric)
-POONDI = st.number_input("POONDI", min_value=0.0)
-CHOLAVARAM = st.number_input("CHOLAVARAM", min_value=0.0)
-REDHILLS = st.number_input("REDHILLS", min_value=0.0)
-CHEMBARAMBAKKAM = st.number_input("CHEMBARAMBAKKAM", min_value=0.0)
-
-# ------------------- PREDICT BUTTON -------------------
-
+# Predict button
 if st.button("Predict Flood %"):
-    
-    input_data = pd.DataFrame([{
-        "Rainfall": Rainfall,
-        "Relative Humidity": Relative_Humidity,
-        "Pressure": Pressure,
-        "Wind speed": Wind_speed,
-        "Wind direction": Wind_direction,
-        "Temperature": Temperature,
-        "Snowfall": Snowfall,
-        "Snow depth": Snow_depth,
-        "Short-wave irradiation\t": Short_wave,
-        "POONDI": POONDI,
-        "CHOLAVARAM": CHOLAVARAM,
-        "REDHILLS": REDHILLS,
-        "CHEMBARAMBAKKAM": CHEMBARAMBAKKAM
-    }])
+    x = np.array([[Rainfall, Relative_Humidity, Pressure, Wind_speed,
+                   Wind_direction, Temperature, Snowfall, Snow_depth,
+                   Shortwave, POONDI, CHOLAVARAM, REDHILLS, CHEM]])
 
-    # Apply scaler only if it exists
-    if scaler:
-        input_scaled = scaler.transform(input_data)
-    else:
-        input_scaled = input_data
+    x_scaled = scaler.transform(x)
+    x_scaled = x_scaled.reshape(1, 1, x_scaled.shape[1])
 
-    # Prediction
-    pred = model.predict(input_scaled)
-    flood_percent = float(pred[0][0])
+    pred = model.predict(x_scaled)[0][0]
+    st.success(f"🌊 Predicted Flood Percent: {pred:.2f}%")
 
-    st.success(f"🌊 Predicted Flood Percentage: **{flood_percent:.2f}%**")
