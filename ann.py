@@ -65,10 +65,21 @@ history = model.fit(
 # 6) EVALUATE TEST SET
 # -----------------------
 loss, mae = model.evaluate(X_test, y_test, verbose=1)
-pred = model.predict(X_test).flatten()
+# Predict button
+if st.button("Predict Flood %"):
+    x = np.array([[Rainfall, Relative_Humidity, Pressure, Wind_speed,
+                   Wind_direction, Temperature, Snowfall, Snow_depth,
+                   Shortwave, POONDI, CHOLAVARAM, REDHILLS, CHEM]])
 
-# Clip predictions to avoid negative values
-pred = np.maximum(pred, 0)
+    x_scaled = scaler.transform(x)
+    x_scaled = x_scaled.reshape(1, 1, x_scaled.shape[1])
+
+    pred = model.predict(x_scaled)[0][0]
+
+    # Clip negative predictions
+    pred = max(0, pred)
+
+    st.success(f"🌊 Predicted Flood Percent: {pred:.2f}%")
 
 # Metrics
 r2 = r2_score(y_test, pred)
