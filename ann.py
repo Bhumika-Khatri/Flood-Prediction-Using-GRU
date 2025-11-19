@@ -8,6 +8,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import GRU, Dense, Dropout
 import joblib
+import streamlit as st
 
 # -----------------------
 # 1) LOAD DATA
@@ -44,7 +45,7 @@ model = Sequential([
     GRU(64),
     Dropout(0.2),
     Dense(32, activation='relu'),
-    Dense(1, activation='relu')  # Ensure non-negative output
+    Dense(1, activation='relu')  # Ensure output is non-negative
 ])
 
 model.compile(optimizer='adam', loss='mse', metrics=['mae'])
@@ -65,21 +66,19 @@ history = model.fit(
 # 6) EVALUATE TEST SET
 # -----------------------
 y_pred_test = model.predict(X_test).flatten()
-
-# Clip negative predictions
-y_pred_test = np.maximum(y_pred_test, 0)
+y_pred_test = np.maximum(y_pred_test, 0)  # Clip negative predictions
 
 # Metrics
 r2 = r2_score(y_test, y_pred_test)
 mse = mean_squared_error(y_test, y_pred_test)
 rmse = np.sqrt(mse)
-mae2 = mean_absolute_error(y_test, y_pred_test)
+mae = mean_absolute_error(y_test, y_pred_test)
 
 print("\n===== MODEL METRICS =====")
 print("R2 Score:", r2)
 print("MSE:", mse)
 print("RMSE:", rmse)
-print("MAE:", mae2)
+print("MAE:", mae)
 
 # -----------------------
 # 7) FUTURE PREDICTIONS (CUSTOM YEARS)
@@ -150,4 +149,38 @@ plt.show()
 model.save("model.h5", save_format="h5", include_optimizer=False)
 joblib.dump(scaler, "scaler.pkl")
 print("\nSaved model.h5 and scaler.pkl successfully!")
+
+# -----------------------
+# 11) STREAMLIT USER INPUT PREDICTION
+# -----------------------
+st.title("🌧️ Flood Prediction Using GRU")
+
+# User inputs
+Rainfall = st.number_input("Rainfall", 0.0)
+Relative_Humidity = st.number_input("Relative Humidity", 0.0)
+Pressure = st.number_input("Pressure", 0.0)
+Wind_speed = st.number_input("Wind speed", 0.0)
+Wind_direction = st.number_input("Wind direction", 0.0)
+Temperature = st.number_input("Temperature", 0.0)
+Snowfall = st.number_input("Snowfall", 0.0)
+Snow_depth = st.number_input("Snow depth", 0.0)
+Shortwave = st.number_input("Short-wave irradiation", 0.0)
+POONDI = st.number_input("POONDI", 0.0)
+CHOLAVARAM = st.number_input("CHOLAVARAM", 0.0)
+REDHILLS = st.number_input("REDHILLS", 0.0)
+CHEM = st.number_input("CHEMBARAMBAKKAM", 0.0)
+
+# Predict button
+if st.button("Predict Flood %"):
+    x = np.array([[Rainfall, Relative_Humidity, Pressure, Wind_speed,
+                   Wind_direction, Temperature, Snowfall, Snow_depth,
+                   Shortwave, POONDI, CHOLAVARAM, REDHILLS, CHEM]])
+
+    x_scaled = scaler.transform(x)
+    x_scaled = x_scaled.reshape(1, 1, x_scaled.shape[1])
+
+    pred_input = model.predict(x_scaled)[0][0]
+    pred_input = max(0, pred_input)  # Clip negative predictions
+
+    st.success(f"🌊 Predicted Flood Percent: {pred_input:.2f}%")
 
