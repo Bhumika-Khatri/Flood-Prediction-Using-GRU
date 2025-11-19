@@ -8,7 +8,6 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import GRU, Dense, Dropout
 import joblib
-import streamlit as st
 
 # -----------------------
 # 1) LOAD DATA
@@ -45,7 +44,7 @@ model = Sequential([
     GRU(64),
     Dropout(0.2),
     Dense(32, activation='relu'),
-    Dense(1, activation='relu')  # Ensure output is non-negative
+    Dense(1, activation='relu')  # ensures non-negative output
 ])
 
 model.compile(optimizer='adam', loss='mse', metrics=['mae'])
@@ -66,7 +65,8 @@ history = model.fit(
 # 6) EVALUATE TEST SET
 # -----------------------
 y_pred_test = model.predict(X_test).flatten()
-y_pred_test = np.maximum(y_pred_test, 0)  # Clip negative predictions
+# Clip negatives and replace NaNs with 0
+y_pred_test = np.nan_to_num(np.maximum(y_pred_test, 0))
 
 # Metrics
 r2 = r2_score(y_test, y_pred_test)
@@ -90,7 +90,6 @@ past_data = X[-window:]  # last 10 rows of features
 # Trend for every feature
 feature_trend = (past_data[-1] - past_data[0]) / window
 
-# Start with last available real data row
 future_input = X[-1].copy()
 future_predictions = []
 
@@ -98,7 +97,7 @@ for year in future_years:
     future_input = future_input + feature_trend
     scaled = scaler.transform([future_input]).reshape(1, 1, len(future_input))
     pred_future = model.predict(scaled)[0][0]
-    pred_future = max(0, pred_future)  # Clip negative predictions
+    pred_future = np.nan_to_num(max(0, pred_future))  # Clip negatives and NaNs
     future_predictions.append(pred_future)
 
 print("\n===== FUTURE FLOOD PREDICTIONS =====")
@@ -144,43 +143,9 @@ plt.grid(True)
 plt.show()
 
 # -----------------------
-# 10) SAVE MODEL & SCALER FOR STREAMLIT
+# 10) SAVE MODEL & SCALER
 # -----------------------
 model.save("model.h5", save_format="h5", include_optimizer=False)
 joblib.dump(scaler, "scaler.pkl")
 print("\nSaved model.h5 and scaler.pkl successfully!")
-
-# -----------------------
-# 11) STREAMLIT USER INPUT PREDICTION
-# -----------------------
-st.title("🌧️ Flood Prediction Using GRU")
-
-# User inputs
-Rainfall = st.number_input("Rainfall", 0.0)
-Relative_Humidity = st.number_input("Relative Humidity", 0.0)
-Pressure = st.number_input("Pressure", 0.0)
-Wind_speed = st.number_input("Wind speed", 0.0)
-Wind_direction = st.number_input("Wind direction", 0.0)
-Temperature = st.number_input("Temperature", 0.0)
-Snowfall = st.number_input("Snowfall", 0.0)
-Snow_depth = st.number_input("Snow depth", 0.0)
-Shortwave = st.number_input("Short-wave irradiation", 0.0)
-POONDI = st.number_input("POONDI", 0.0)
-CHOLAVARAM = st.number_input("CHOLAVARAM", 0.0)
-REDHILLS = st.number_input("REDHILLS", 0.0)
-CHEM = st.number_input("CHEMBARAMBAKKAM", 0.0)
-
-# Predict button
-if st.button("Predict Flood %"):
-    x = np.array([[Rainfall, Relative_Humidity, Pressure, Wind_speed,
-                   Wind_direction, Temperature, Snowfall, Snow_depth,
-                   Shortwave, POONDI, CHOLAVARAM, REDHILLS, CHEM]])
-
-    x_scaled = scaler.transform(x)
-    x_scaled = x_scaled.reshape(1, 1, x_scaled.shape[1])
-
-    pred_input = model.predict(x_scaled)[0][0]
-    pred_input = max(0, pred_input)  # Clip negative predictions
-
-    st.success(f"🌊 Predicted Flood Percent: {pred_input:.2f}%")
 
