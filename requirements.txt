@@ -1,7 +1,7 @@
-tensorflow-cpu==2.12.0
+tensorflow-cpu>=2.12.0,<2.13
 numpy
 pandas
 scikit-learn
 streamlit
 joblib
-h5py==3.8.0
+h5py>=3.8.0,<4.0
