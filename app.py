@@ -50,14 +50,14 @@ Relative_Humidity = st.number_input("Relative Humidity (%)", min_value=0.0, valu
 Pressure = st.number_input("Pressure (hPa)", min_value=900.0, value=1010.0)
 Wind_speed = st.number_input("Wind speed (m/s)", min_value=0.0, value=5.0)
 Wind_direction = st.number_input("Wind direction (degrees)", min_value=0.0, value=90.0)
-Temperature = st.number_input("Temperature (°C)", min_value=-10.0, value=28.0)
+Temperature = st.number_input("Temperature (K)", min_value=-10.0, value=28.0)
 Snowfall = st.number_input("Snowfall (mm)", min_value=0.0, value=0.0)
 Snow_depth = st.number_input("Snow depth (cm)", min_value=0.0, value=0.0)
-Shortwave = st.number_input("Short-wave irradiation", min_value=0.0, value=200.0)
-POONDI = st.number_input("POONDI Reservoir level", min_value=0.0, value=50.0)
-CHOLAVARAM = st.number_input("CHOLAVARAM Reservoir level", min_value=0.0, value=40.0)
-REDHILLS = st.number_input("REDHILLS Reservoir level", min_value=0.0, value=30.0)
-CHEM = st.number_input("CHEMBARAMBAKKAM Reservoir level", min_value=0.0, value=35.0)
+Shortwave = st.number_input("Short-wave irradiation(Wh/m² (watt-hours per square meter)", min_value=0.0, value=200.0)
+POONDI = st.number_input("POONDI Reservoir level million cubic feet (MCFT)", min_value=0.0, value=50.0)
+CHOLAVARAM = st.number_input("CHOLAVARAM Reservoir level million cubic feet (MCFT)", min_value=0.0, value=40.0)
+REDHILLS = st.number_input("REDHILLS Reservoir level million cubic feet (MCFT)", min_value=0.0, value=30.0)
+CHEM = st.number_input("CHEMBARAMBAKKAM Reservoir level million cubic feet (MCFT)", min_value=0.0, value=35.0)
 
 # -------------------------
 # 6) PREDICTION
