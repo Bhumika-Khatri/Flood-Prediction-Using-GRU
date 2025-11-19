@@ -5,22 +5,21 @@ import joblib
 import os
 
 # -------------------------
-# 1) CHECK & LOAD MODEL AND SCALERS
+# 1) CHECK & LOAD MODEL AND SCALER
 # -------------------------
 if not os.path.exists("model.h5"):
     st.error("❌ Model file 'model.h5' not found!")
     st.stop()
 
-if not os.path.exists("scaler.pkl") or not os.path.exists("scaler_y.pkl"):
-    st.error("❌ Scaler files not found!")
+if not os.path.exists("scaler.pkl"):
+    st.error("❌ Scaler file 'scaler.pkl' not found!")
     st.stop()
 
 # Load model
 model = load_model("model.h5", compile=False)
 
-# Load scalers using joblib
-scaler_X = joblib.load("scaler_X.pkl")
-scaler_y = joblib.load("scaler_y.pkl")
+# Load scaler (this is your single scaler.pkl file)
+scaler = joblib.load("scaler.pkl")
 
 # -------------------------
 # 2) APP TITLE
@@ -55,17 +54,16 @@ if st.button("Predict Flood %"):
                    Shortwave, POONDI, CHOLAVARAM, REDHILLS, CHEM]])
     
     # Scale input features
-    x_scaled = scaler_X.transform(x)
-    x_scaled = x_scaled.reshape(1, 1, x_scaled.shape[1])
+    x_scaled = scaler.transform(x)  # use your single scaler.pkl
+    x_scaled = x_scaled.reshape(1, 1, x_scaled.shape[1])  # GRU expects 3D input
     
     # Predict
     pred_scaled = model.predict(x_scaled)[0][0]
     
-    # Inverse transform to original scale
-    pred = scaler_y.inverse_transform(np.array([[pred_scaled]]))[0][0]
+    # If your scaler also scaled the target, inverse transform like this:
+    # pred = scaler.inverse_transform([[pred_scaled]])[0][0]  # only if needed
     
     # Clip negative values
-    pred = max(0, pred)
+    pred = max(0, pred_scaled)
     
     st.success(f"🌊 Predicted Flood Percent: {pred:.2f}%")
-
