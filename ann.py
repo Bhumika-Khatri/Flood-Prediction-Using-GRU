@@ -16,19 +16,22 @@ df = pd.read_csv("Flood_Prediction.csv")
 
 # Separate features and target
 X = df.drop("flood_percent", axis=1).values
-y = df["flood_percent"].values
+y = df["flood_percent"].values.reshape(-1, 1)   # <-- reshape for scaler
 
 # -----------------------
 # 2) SCALE FEATURES
 # -----------------------
-scaler = MinMaxScaler()
-X_scaled = scaler.fit_transform(X)
+scaler_X = MinMaxScaler()
+X_scaled = scaler_X.fit_transform(X)
+
+scaler_y = MinMaxScaler()
+y_scaled = scaler_y.fit_transform(y)  # <-- target scaling FIX
 
 # -----------------------
 # 3) TRAIN-TEST SPLIT
 # -----------------------
 X_train, X_test, y_train, y_test = train_test_split(
-    X_scaled, y, test_size=0.2, random_state=42
+    X_scaled, y_scaled, test_size=0.2, random_state=42
 )
 
 # GRU needs 3D input → (samples, timesteps, features)
@@ -44,7 +47,7 @@ model = Sequential([
     GRU(64),
     Dropout(0.2),
     Dense(32, activation='relu'),
-    Dense(1, activation='relu')  # ensures non-negative output
+    Dense(1)  # <-- REMOVE RELU (output in scaled space)
 ])
 
 model.compile(optimizer='adam', loss='mse', metrics=['mae'])
@@ -64,88 +67,26 @@ history = model.fit(
 # -----------------------
 # 6) EVALUATE TEST SET
 # -----------------------
-y_pred_test = model.predict(X_test).flatten()
-# Clip negatives and replace NaNs with 0
-y_pred_test = np.nan_to_num(np.maximum(y_pred_test, 0))
+y_pred_scaled = model.predict(X_test)
+y_pred = scaler_y.inverse_transform(y_pred_scaled)  # <-- FIXED
+y_test_real = scaler_y.inverse_transform(y_test)    # <-- FIXED
 
-# Metrics
-r2 = r2_score(y_test, y_pred_test)
-mse = mean_squared_error(y_test, y_pred_test)
+r2 = r2_score(y_test_real, y_pred)
+mse = mean_squared_error(y_test_real, y_pred)
 rmse = np.sqrt(mse)
-mae = mean_absolute_error(y_test, y_pred_test)
+mae2 = mean_absolute_error(y_test_real, y_pred)
 
 print("\n===== MODEL METRICS =====")
 print("R2 Score:", r2)
 print("MSE:", mse)
 print("RMSE:", rmse)
-print("MAE:", mae)
+print("MAE:", mae2)
 
 # -----------------------
-# 7) FUTURE PREDICTIONS (CUSTOM YEARS)
+# 7) SAVE MODEL & SCALERS
 # -----------------------
-future_years = [2026, 2027, 2028, 2029, 2030]
-window = 10
-past_data = X[-window:]  # last 10 rows of features
+model.save("model.h5", include_optimizer=False)
+joblib.dump(scaler_X, "scaler_X.pkl")
+joblib.dump(scaler_y, "scaler_y.pkl")
 
-# Trend for every feature
-feature_trend = (past_data[-1] - past_data[0]) / window
-
-future_input = X[-1].copy()
-future_predictions = []
-
-for year in future_years:
-    future_input = future_input + feature_trend
-    scaled = scaler.transform([future_input]).reshape(1, 1, len(future_input))
-    pred_future = model.predict(scaled)[0][0]
-    pred_future = np.nan_to_num(max(0, pred_future))  # Clip negatives and NaNs
-    future_predictions.append(pred_future)
-
-print("\n===== FUTURE FLOOD PREDICTIONS =====")
-for yr, p in zip(future_years, future_predictions):
-    print(f"{yr}: {p}")
-
-# -----------------------
-# 8) PLOT: Actual vs Predicted
-# -----------------------
-plt.figure(figsize=(10,5))
-plt.plot(y_test[:100], label="Actual Flood %", linewidth=3)
-plt.plot(y_pred_test[:100], label="Predicted Flood %", linestyle="dashed")
-plt.title("Actual vs Predicted Flood %")
-plt.xlabel("Sample")
-plt.ylabel("Flood %")
-plt.legend()
-plt.grid()
-plt.show()
-
-# -----------------------
-# 9) PLOT: Training Loss (Smoothed)
-# -----------------------
-def smooth_curve(points, factor=0.9):
-    smoothed = []
-    last = points[0]
-    for p in points:
-        smoothed_val = last * factor + p * (1 - factor)
-        smoothed.append(smoothed_val)
-        last = smoothed_val
-    return smoothed
-
-train_loss_smooth = smooth_curve(history.history['loss'])
-val_loss_smooth = smooth_curve(history.history['val_loss'])
-
-plt.figure(figsize=(10,5))
-plt.plot(train_loss_smooth, label='Training Loss (Smoothed)', linewidth=3)
-plt.plot(val_loss_smooth, label='Validation Loss (Smoothed)', linewidth=3, linestyle='dashed')
-plt.title("Training vs Validation Loss")
-plt.xlabel("Epoch")
-plt.ylabel("Loss")
-plt.legend()
-plt.grid(True)
-plt.show()
-
-# -----------------------
-# 10) SAVE MODEL & SCALER
-# -----------------------
-model.save("model.h5", save_format="h5", include_optimizer=False)
-joblib.dump(scaler, "scaler.pkl")
-print("\nSaved model.h5 and scaler.pkl successfully!")
-
+print("\nSaved model + scalers successfully!")
