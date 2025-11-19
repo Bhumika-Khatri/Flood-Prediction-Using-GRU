@@ -11,7 +11,7 @@ if not os.path.exists("model.h5"):
     st.error("❌ Model file 'model.h5' not found!")
     st.stop()
 
-if not os.path.exists("scaler_X.pkl") or not os.path.exists("scaler_y.pkl"):
+if not os.path.exists("scaler.pkl") or not os.path.exists("scaler_y.pkl"):
     st.error("❌ Scaler files not found!")
     st.stop()
 
