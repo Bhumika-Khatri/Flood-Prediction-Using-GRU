@@ -1,34 +1,49 @@
 import streamlit as st
 import numpy as np
-from tensorflow.keras.models import load_model
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import GRU, Dense, Dropout
 import joblib
 import os
 
 # -------------------------
-# 1) CHECK & LOAD MODEL AND SCALER
+# 1) CHECK & LOAD MODEL WEIGHTS AND SCALER
 # -------------------------
 if not os.path.exists("model.h5"):
-    st.error("❌ Model file 'model.h5' not found!")
+    st.error("❌ Model weights file 'model.h5' not found!")
     st.stop()
 
 if not os.path.exists("scaler.pkl"):
     st.error("❌ Scaler file 'scaler.pkl' not found!")
     st.stop()
 
-# Load model
-model = load_model("model.h5", compile=False)
-
-# Load scaler (this is your single scaler.pkl file)
-scaler = joblib.load("scaler.pkl")
+# -------------------------
+# 2) LOAD SCALER
+# -------------------------
+scaler = joblib.load("scaler.pkl")  # your single scaler.pkl file
 
 # -------------------------
-# 2) APP TITLE
+# 3) RECREATE THE MODEL ARCHITECTURE
+# -------------------------
+model = Sequential([
+    GRU(128, return_sequences=True, input_shape=(1, 13)),
+    Dropout(0.2),
+    GRU(64),
+    Dropout(0.2),
+    Dense(32, activation='relu'),
+    Dense(1)
+])
+
+# Load the saved weights
+model.load_weights("model.h5")
+
+# -------------------------
+# 4) APP TITLE
 # -------------------------
 st.title("🌧️ Flood Prediction Using GRU")
 st.markdown("Enter the values for the following parameters to predict the flood percentage:")
 
 # -------------------------
-# 3) USER INPUTS
+# 5) USER INPUTS
 # -------------------------
 Rainfall = st.number_input("Rainfall (mm)", min_value=0.0, value=50.0)
 Relative_Humidity = st.number_input("Relative Humidity (%)", min_value=0.0, value=80.0)
@@ -45,7 +60,7 @@ REDHILLS = st.number_input("REDHILLS Reservoir level", min_value=0.0, value=30.0
 CHEM = st.number_input("CHEMBARAMBAKKAM Reservoir level", min_value=0.0, value=35.0)
 
 # -------------------------
-# 4) PREDICTION
+# 6) PREDICTION
 # -------------------------
 if st.button("Predict Flood %"):
     # Prepare input
@@ -54,16 +69,17 @@ if st.button("Predict Flood %"):
                    Shortwave, POONDI, CHOLAVARAM, REDHILLS, CHEM]])
     
     # Scale input features
-    x_scaled = scaler.transform(x)  # use your single scaler.pkl
+    x_scaled = scaler.transform(x)
     x_scaled = x_scaled.reshape(1, 1, x_scaled.shape[1])  # GRU expects 3D input
     
     # Predict
     pred_scaled = model.predict(x_scaled)[0][0]
     
-    # If your scaler also scaled the target, inverse transform like this:
+    # If target was scaled, you can inverse transform here
     # pred = scaler.inverse_transform([[pred_scaled]])[0][0]  # only if needed
     
     # Clip negative values
     pred = max(0, pred_scaled)
     
     st.success(f"🌊 Predicted Flood Percent: {pred:.2f}%")
+
