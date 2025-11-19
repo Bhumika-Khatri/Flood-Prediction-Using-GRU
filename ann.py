@@ -244,3 +244,24 @@ plt.ylabel("Loss")
 plt.legend()
 plt.grid(True)
 plt.show()
+
+
+# ============================
+# 10) SAVE MODEL & SCALER FOR STREAMLIT
+# ============================
+
+from tensorflow.keras.models import save_model
+import joblib
+
+# Save GRU model in SAFE .h5 format (no optimizer → prevents Streamlit crash)
+model.save(
+    "model.h5",
+    save_format="h5",
+    include_optimizer=False
+)
+
+# Save the scaler for Streamlit inputs
+joblib.dump(scaler, "scaler.pkl")
+
+print("\nSaved model.h5 and scaler.pkl successfully!")
+
