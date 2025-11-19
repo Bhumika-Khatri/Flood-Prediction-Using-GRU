@@ -44,7 +44,7 @@ model = Sequential([
     GRU(64),
     Dropout(0.2),
     Dense(32, activation='relu'),
-    Dense(1, activation='relu')  # <-- Ensure non-negative output
+    Dense(1, activation='relu')  # Ensure non-negative output
 ])
 
 model.compile(optimizer='adam', loss='mse', metrics=['mae'])
@@ -64,28 +64,16 @@ history = model.fit(
 # -----------------------
 # 6) EVALUATE TEST SET
 # -----------------------
-loss, mae = model.evaluate(X_test, y_test, verbose=1)
-# Predict button
-if st.button("Predict Flood %"):
-    x = np.array([[Rainfall, Relative_Humidity, Pressure, Wind_speed,
-                   Wind_direction, Temperature, Snowfall, Snow_depth,
-                   Shortwave, POONDI, CHOLAVARAM, REDHILLS, CHEM]])
+y_pred_test = model.predict(X_test).flatten()
 
-    x_scaled = scaler.transform(x)
-    x_scaled = x_scaled.reshape(1, 1, x_scaled.shape[1])
-
-    pred = model.predict(x_scaled)[0][0]
-
-    # Clip negative predictions
-    pred = max(0, pred)
-
-    st.success(f"🌊 Predicted Flood Percent: {pred:.2f}%")
+# Clip negative predictions
+y_pred_test = np.maximum(y_pred_test, 0)
 
 # Metrics
-r2 = r2_score(y_test, pred)
-mse = mean_squared_error(y_test, pred)
+r2 = r2_score(y_test, y_pred_test)
+mse = mean_squared_error(y_test, y_pred_test)
 rmse = np.sqrt(mse)
-mae2 = mean_absolute_error(y_test, pred)
+mae2 = mean_absolute_error(y_test, y_pred_test)
 
 print("\n===== MODEL METRICS =====")
 print("R2 Score:", r2)
@@ -108,15 +96,10 @@ future_input = X[-1].copy()
 future_predictions = []
 
 for year in future_years:
-    # Add yearly trend to each feature
     future_input = future_input + feature_trend
-
-    # Scale + reshape for GRU
     scaled = scaler.transform([future_input]).reshape(1, 1, len(future_input))
-
-    # Predict
     pred_future = model.predict(scaled)[0][0]
-    pred_future = max(0, pred_future)  # <-- Clip negative predictions
+    pred_future = max(0, pred_future)  # Clip negative predictions
     future_predictions.append(pred_future)
 
 print("\n===== FUTURE FLOOD PREDICTIONS =====")
@@ -128,7 +111,7 @@ for yr, p in zip(future_years, future_predictions):
 # -----------------------
 plt.figure(figsize=(10,5))
 plt.plot(y_test[:100], label="Actual Flood %", linewidth=3)
-plt.plot(pred[:100], label="Predicted Flood %", linestyle="dashed")
+plt.plot(y_pred_test[:100], label="Predicted Flood %", linestyle="dashed")
 plt.title("Actual vs Predicted Flood %")
 plt.xlabel("Sample")
 plt.ylabel("Flood %")
@@ -167,3 +150,4 @@ plt.show()
 model.save("model.h5", save_format="h5", include_optimizer=False)
 joblib.dump(scaler, "scaler.pkl")
 print("\nSaved model.h5 and scaler.pkl successfully!")
+
