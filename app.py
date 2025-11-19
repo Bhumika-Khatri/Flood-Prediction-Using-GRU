@@ -1,30 +1,31 @@
 import streamlit as st
 import numpy as np
-import pickle
 from tensorflow.keras.models import load_model
+import joblib
 import os
 
 # -------------------------
-# 1) CHECK & LOAD MODEL AND SCALER
+# 1) CHECK & LOAD MODEL AND SCALERS
 # -------------------------
 if not os.path.exists("model.h5"):
     st.error("❌ Model file 'model.h5' not found!")
     st.stop()
 
-if not os.path.exists("scaler.pkl"):
-    st.error("❌ Scaler file 'scaler.pkl' not found!")
+if not os.path.exists("scaler_X.pkl") or not os.path.exists("scaler_y.pkl"):
+    st.error("❌ Scaler files not found!")
     st.stop()
 
-# Load model and scaler
+# Load model
 model = load_model("model.h5", compile=False)
-with open("scaler.pkl", "rb") as f:
-    scaler = pickle.load(f)
+
+# Load scalers using joblib
+scaler_X = joblib.load("scaler_X.pkl")
+scaler_y = joblib.load("scaler_y.pkl")
 
 # -------------------------
 # 2) APP TITLE
 # -------------------------
 st.title("🌧️ Flood Prediction Using GRU")
-
 st.markdown("Enter the values for the following parameters to predict the flood percentage:")
 
 # -------------------------
@@ -54,13 +55,17 @@ if st.button("Predict Flood %"):
                    Shortwave, POONDI, CHOLAVARAM, REDHILLS, CHEM]])
     
     # Scale input features
-    x_scaled = scaler.transform(x)
+    x_scaled = scaler_X.transform(x)
     x_scaled = x_scaled.reshape(1, 1, x_scaled.shape[1])
     
     # Predict
-    pred = model.predict(x_scaled)[0][0]
+    pred_scaled = model.predict(x_scaled)[0][0]
+    
+    # Inverse transform to original scale
+    pred = scaler_y.inverse_transform(np.array([[pred_scaled]]))[0][0]
     
     # Clip negative values
     pred = max(0, pred)
     
     st.success(f"🌊 Predicted Flood Percent: {pred:.2f}%")
+
