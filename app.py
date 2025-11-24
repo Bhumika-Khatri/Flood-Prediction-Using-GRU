@@ -5,6 +5,35 @@ from tensorflow.keras.layers import GRU, Dense, Dropout
 import joblib
 import os
 
+
+import base64  # for background image
+
+# -------------------------
+# ADD BACKGROUND IMAGE
+# -------------------------
+def add_bg(image_file):
+    with open(image_file, "rb") as img:
+        encoded = base64.b64encode(img.read()).decode()
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/jpg;base64,{encoded}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+# Replace 'uploaded_image.jpg' with your actual image filename
+add_bg("App Image")
+
+
+       
+
 # -------------------------
 # 1) CHECK & LOAD MODEL WEIGHTS AND SCALER
 # -------------------------
