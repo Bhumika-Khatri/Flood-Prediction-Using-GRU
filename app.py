@@ -29,7 +29,7 @@ def add_bg(image_file):
     )
 
 # Replace 'uploaded_image.jpg' with your actual image filename
-add_bg("App Image")
+add_bg("App Image.png")
 
 
        
