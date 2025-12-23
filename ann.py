@@ -61,8 +61,8 @@ history = model.fit(
 
 # 6) EVALUATE TEST SET
 y_pred_scaled = model.predict(X_test)
-y_pred = scaler_y.inverse_transform(y_pred_scaled)  # <-- FIXED
-y_test_real = scaler_y.inverse_transform(y_test)    # <-- FIXED
+y_pred = scaler_y.inverse_transform(y_pred_scaled)  
+y_test_real = scaler_y.inverse_transform(y_test)   
 
 r2 = r2_score(y_test_real, y_pred)
 mse = mean_squared_error(y_test_real, y_pred)
