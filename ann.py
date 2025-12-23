@@ -43,7 +43,7 @@ model = Sequential([
     GRU(64),
     Dropout(0.2),
     Dense(32, activation='relu'),
-    Dense(1)  # <-- REMOVE RELU (output in scaled space)
+    Dense(1) 
 ])
 
 model.compile(optimizer='adam', loss='mse', metrics=['mae'])
