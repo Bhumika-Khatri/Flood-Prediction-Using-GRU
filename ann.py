@@ -23,7 +23,7 @@ scaler_X = MinMaxScaler()
 X_scaled = scaler_X.fit_transform(X)
 
 scaler_y = MinMaxScaler()
-y_scaled = scaler_y.fit_transform(y)  # <-- target scaling FIX
+y_scaled = scaler_y.fit_transform(y)
 
 
 # 3) TRAIN-TEST SPLIT
